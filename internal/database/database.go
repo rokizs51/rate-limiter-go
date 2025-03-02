@@ -11,7 +11,7 @@ import (
 
 var DB *gorm.DB
 
-func initialize(cfg *config.Config){
+func Initialize(cfg *config.Config){
 	var err error
 	DB, err = gorm.Open(sqlite.Open(cfg.DatabaseDSN), &gorm.Config{})
 	if err != nil {

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"log"
 	"rateLimiter/internal/database"
 	"rateLimiter/internal/models"
 	"time"
@@ -12,13 +13,14 @@ type RateLimitRepository struct {
 	db *gorm.DB
 }
 
-func NewRateLimitRepository(db *gorm.DB) *RateLimitRepository {
-	return &RateLimitRepository{db: database.DB}
+func NewRateLimitRepository() *RateLimitRepository {
+	return &RateLimitRepository{db: database.GetDB()}
 }
 
 func(r *RateLimitRepository) GetRateLimit(identifier string) (*models.RateLimit, error) {
 	var rateLimit models.RateLimit
-	result := r.db.Where("identifier = ?", identifier).First(&rateLimit)
+	result := r.db.Raw("SELECT * FROM rate_limits WHERE identifier = ?", identifier).Scan(&rateLimit)
+	log.Println(rateLimit)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, nil
