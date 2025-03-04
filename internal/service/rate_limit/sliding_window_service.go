@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
-type RateLimitService struct {
-	repo *repository.RateLimitRepository
-	config *config.RateLimitConfig
+type SlidingWindowService struct {
+	repo   *repository.SlidingWindowRepository
+	config *config.SlidingWindowConfig
 }
 
-func NewRateLimitService(config *config.RateLimitConfig) *RateLimitService {
-	return &RateLimitService{repo: repository.NewRateLimitRepository(), config: config}
+func NewSlidingWindowService(config *config.SlidingWindowConfig) *SlidingWindowService {
+	return &SlidingWindowService{repo: repository.NewRateLimitRepository(), config: config}
 }
 
-func (s *RateLimitService) IsAllowed(identifier string) (bool, int, time.Time, error ) {
+func (s *SlidingWindowService) IsAllowed(identifier string) (bool, int, time.Time, error) {
 	if !s.config.Enabled {
 		return true, 0, time.Time{}, nil
 	}
-	
+
 	rateLimit, err := s.repo.GetRateLimit(identifier)
 	if err != nil {
 		return false, 0, time.Time{}, err

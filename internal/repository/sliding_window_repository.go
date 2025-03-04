@@ -9,15 +9,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type RateLimitRepository struct {
+type SlidingWindowRepository struct {
 	db *gorm.DB
 }
 
-func NewRateLimitRepository() *RateLimitRepository {
-	return &RateLimitRepository{db: database.GetDB()}
+func NewRateLimitRepository() *SlidingWindowRepository {
+	return &SlidingWindowRepository{db: database.GetDB()}
 }
 
-func(r *RateLimitRepository) GetRateLimit(identifier string) (*models.RateLimit, error) {
+func (r *SlidingWindowRepository) GetRateLimit(identifier string) (*models.RateLimit, error) {
 	var rateLimit models.RateLimit
 	result := r.db.Raw("SELECT * FROM rate_limits WHERE identifier = ?", identifier).Scan(&rateLimit)
 	log.Println(rateLimit)
@@ -31,13 +31,13 @@ func(r *RateLimitRepository) GetRateLimit(identifier string) (*models.RateLimit,
 	return &rateLimit, nil
 }
 
-func (r *RateLimitRepository) CreateRateLimit(identifier string, windowSize int) (*models.RateLimit, error) {
+func (r *SlidingWindowRepository) CreateRateLimit(identifier string, windowSize int) (*models.RateLimit, error) {
 	now := time.Now()
 	rateLimit := models.RateLimit{
-		Identifier: identifier,
-		Count: 1,
+		Identifier:  identifier,
+		Count:       1,
 		LastRequest: now,
-		ResetAt: now.Add(time.Duration(windowSize) * time.Second),
+		ResetAt:     now.Add(time.Duration(windowSize) * time.Second),
 	}
 	result := r.db.Create(&rateLimit)
 	if result.Error != nil {
@@ -47,13 +47,13 @@ func (r *RateLimitRepository) CreateRateLimit(identifier string, windowSize int)
 	return &rateLimit, nil
 }
 
-func (r *RateLimitRepository) IncrementRateLimit(rateLimit *models.RateLimit) error {
+func (r *SlidingWindowRepository) IncrementRateLimit(rateLimit *models.RateLimit) error {
 	rateLimit.Count++
 	rateLimit.LastRequest = time.Now()
 	return r.db.Save(rateLimit).Error
 }
 
-func (r *RateLimitRepository) ResetRateLimit(rateLimit *models.RateLimit, windowSize int) error {
+func (r *SlidingWindowRepository) ResetRateLimit(rateLimit *models.RateLimit, windowSize int) error {
 	now := time.Now()
 	rateLimit.Count = 1
 	rateLimit.LastRequest = now

@@ -11,7 +11,7 @@ import (
 
 var DB *gorm.DB
 
-func Initialize(cfg *config.Config){
+func Initialize(cfg *config.Config) {
 	var err error
 	DB, err = gorm.Open(sqlite.Open(cfg.DatabaseDSN), &gorm.Config{})
 	if err != nil {
@@ -19,7 +19,7 @@ func Initialize(cfg *config.Config){
 	}
 
 	// auto migrate
-	err = DB.AutoMigrate(&models.RateLimit{})
+	err = DB.AutoMigrate(&models.RateLimit{}, &models.TokenBucket{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database : %v", err)
 	}

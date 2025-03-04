@@ -1,24 +1,33 @@
 package config
 
 type Config struct {
-	DatabaseDSN string
-	RateLimit RateLimitConfig
+	DatabaseDSN         string
+	SlidingWindowConfig SlidingWindowConfig
+	TokenBucketConfig   TokenBucketConfig
 }
 
-type RateLimitConfig struct {
-	Enabled bool
+type SlidingWindowConfig struct {
+	Enabled      bool
 	RequestLimit int
-	WindowSize int
+	WindowSize   int
 }
 
+type TokenBucketConfig struct {
+	Tokens     int
+	RefillRate float64
+}
 
 func NewConfig() *Config {
 	return &Config{
 		DatabaseDSN: "file:rateLimiter.db",
-		RateLimit: RateLimitConfig{
-			Enabled: true,
+		SlidingWindowConfig: SlidingWindowConfig{
+			Enabled:      true,
 			RequestLimit: 5,
-			WindowSize: 60,
+			WindowSize:   60,
+		},
+		TokenBucketConfig: TokenBucketConfig{
+			Tokens:     10,
+			RefillRate: 1.0,
 		},
 	}
 }
