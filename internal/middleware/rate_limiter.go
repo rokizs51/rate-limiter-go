@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"rateLimiter/internal/config"
 	"rateLimiter/internal/factory"
+	service "rateLimiter/internal/service/rate_limit"
 	"strconv"
 	"time"
 
@@ -11,14 +14,22 @@ import (
 )
 
 func RateLimiter(cfg *config.Config, algorithm factory.Algorithm) gin.HandlerFunc {
-	rateLimiter := factory.NewRateLimiter(algorithm, cfg)
-
+	rateLimiter := service.NewRedisTokenBucketService(&cfg.TokenBucketConfig)
+	fmt.Println(rateLimiter)
 	return func(c *gin.Context) {
+		// Add fallback mechanism
 		identifier := c.ClientIP()
-		allowed, count, resetAt, err := rateLimiter.IsAllowed(identifier)
+		allowed, count, resetAt, err := rateLimiter.IsAllowed(c.Request.Context(), identifier)
+		if err != nil {
+			// If Redis is not available, fallback to allow traffic
+			log.Printf("Rate limiter error: %v, falling back to allow traffic", err)
+			c.Next()
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Rate limiting error",
+				"error":   "Rate limiting error",
+				"details": err.Error(),
 			})
 			return
 		}

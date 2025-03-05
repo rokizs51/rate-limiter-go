@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"rateLimiter/internal/config"
 	"rateLimiter/internal/repository"
 	"time"
@@ -15,12 +16,12 @@ func NewSlidingWindowService(config *config.SlidingWindowConfig) *SlidingWindowS
 	return &SlidingWindowService{repo: repository.NewRateLimitRepository(), config: config}
 }
 
-func (s *SlidingWindowService) IsAllowed(identifier string) (bool, int, time.Time, error) {
+func (s *SlidingWindowService) IsAllowed(ctx context.Context, identifier string) (bool, int, time.Time, error) {
 	if !s.config.Enabled {
 		return true, 0, time.Time{}, nil
 	}
 
-	rateLimit, err := s.repo.GetRateLimit(identifier)
+	rateLimit, err := s.repo.GetRateLimit(ctx, identifier)
 	if err != nil {
 		return false, 0, time.Time{}, err
 	}
@@ -29,7 +30,7 @@ func (s *SlidingWindowService) IsAllowed(identifier string) (bool, int, time.Tim
 
 	//iff no rate limit exist create one
 	if rateLimit == nil {
-		rateLimit, err = s.repo.CreateRateLimit(identifier, s.config.WindowSize)
+		rateLimit, err = s.repo.CreateRateLimit(ctx, identifier, s.config.WindowSize)
 		if err != nil {
 			return false, 0, time.Time{}, err
 		}
@@ -38,7 +39,7 @@ func (s *SlidingWindowService) IsAllowed(identifier string) (bool, int, time.Tim
 
 	//if rate limit has expired, reset it
 	if now.After(rateLimit.ResetAt) {
-		err := s.repo.ResetRateLimit(rateLimit, s.config.WindowSize)
+		err := s.repo.ResetRateLimit(ctx, rateLimit, s.config.WindowSize)
 		if err != nil {
 			return false, 0, time.Time{}, err
 		}
@@ -51,7 +52,7 @@ func (s *SlidingWindowService) IsAllowed(identifier string) (bool, int, time.Tim
 	}
 
 	// increment rate limit
-	err = s.repo.IncrementRateLimit(rateLimit)
+	err = s.repo.IncrementRateLimit(ctx, rateLimit)
 	if err != nil {
 		return false, 0, time.Time{}, err
 	}

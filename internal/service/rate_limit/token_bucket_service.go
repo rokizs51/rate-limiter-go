@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"rateLimiter/internal/config"
 	"rateLimiter/internal/repository"
 	"time"
@@ -18,15 +19,15 @@ func NewTokenBucketService(config *config.TokenBucketConfig) *TokenBucketService
 	}
 }
 
-func (s *TokenBucketService) IsAllowed(identifier string) (bool, int, time.Time, error) {
-	bucket, err := s.repo.GetBucket(identifier)
+func (s *TokenBucketService) IsAllowed(ctx context.Context, identifier string) (bool, int, time.Time, error) {
+	bucket, err := s.repo.GetBucket(ctx, identifier)
 	if err != nil {
 		return false, 0, time.Time{}, err
 	}
 
 	now := time.Now()
 	if bucket == nil {
-		bucket, err = s.repo.CreateBucket(identifier, float64(s.config.Tokens))
+		bucket, err = s.repo.CreateBucket(ctx, identifier, float64(s.config.Tokens))
 		if err != nil {
 			return false, 0, time.Time{}, err
 		}
@@ -39,7 +40,7 @@ func (s *TokenBucketService) IsAllowed(identifier string) (bool, int, time.Time,
 
 	if bucket.Tokens < 1 {
 		nextRefillTime := now.Add(time.Duration((1-bucket.Tokens)/s.config.RefillRate) * time.Second)
-		err := s.repo.UpdateBucket(bucket)
+		err := s.repo.UpdateBucket(ctx, bucket)
 		if err != nil {
 			return false, 0, time.Time{}, err
 		}
@@ -47,7 +48,7 @@ func (s *TokenBucketService) IsAllowed(identifier string) (bool, int, time.Time,
 	}
 
 	bucket.Tokens--
-	err = s.repo.UpdateBucket(bucket)
+	err = s.repo.UpdateBucket(ctx, bucket)
 	if err != nil {
 		return false, 0, time.Time{}, err
 	}

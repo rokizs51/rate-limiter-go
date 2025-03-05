@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"rateLimiter/internal/database"
 	"rateLimiter/internal/models"
 	"time"
@@ -16,7 +17,7 @@ func NewTokenBucketRepository() *TokenBucketRepository {
 	return &TokenBucketRepository{db: database.GetDB()}
 }
 
-func (r *TokenBucketRepository) GetBucket(identifier string) (*models.TokenBucket, error) {
+func (r *TokenBucketRepository) GetBucket(ctx context.Context, identifier string) (*models.TokenBucket, error) {
 	var bucket models.TokenBucket
 	result := r.db.Where("identifier = ?", identifier).First(&bucket)
 	if result.Error != nil {
@@ -29,7 +30,7 @@ func (r *TokenBucketRepository) GetBucket(identifier string) (*models.TokenBucke
 	return &bucket, nil
 }
 
-func (r *TokenBucketRepository) CreateBucket(identifier string, token float64) (*models.TokenBucket, error) {
+func (r *TokenBucketRepository) CreateBucket(ctx context.Context, identifier string, token float64) (*models.TokenBucket, error) {
 	bucket := models.TokenBucket{
 		Identifier: identifier,
 		Tokens:     token,
@@ -44,6 +45,6 @@ func (r *TokenBucketRepository) CreateBucket(identifier string, token float64) (
 	return &bucket, nil
 }
 
-func (r *TokenBucketRepository) UpdateBucket(bucket *models.TokenBucket) error {
+func (r *TokenBucketRepository) UpdateBucket(ctx context.Context, bucket *models.TokenBucket) error {
 	return r.db.Save(bucket).Error
 }

@@ -1,13 +1,14 @@
 package factory
 
 import (
+	"context"
 	"rateLimiter/internal/config"
 	service "rateLimiter/internal/service/rate_limit"
 	"time"
 )
 
 type RateLimiter interface {
-	IsAllowed(identifier string) (bool, int, time.Time, error)
+	IsAllowed(ctx context.Context, identifier string) (bool, int, time.Time, error)
 }
 
 type Algorithm string
